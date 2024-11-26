@@ -1,101 +1,165 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, useEffect } from "react";
+
+export default function FormPage() {
+  const [formData, setFormData] = useState({
+    age_years: "",
+    sex_0male_1female: "0", // Valor predeterminado: Hombre
+    episode_number: "",
+  });
+
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState("bg-gradient-to-br from-purple-400 to-blue-300");
+
+  useEffect(() => {
+    if (result) {
+      // Extrae el número del resultado y asegúrate de que es un valor válido
+      const match = result.match(/[\d.]+$/); // Encuentra el número al final de la cadena
+      const score = match ? parseFloat(match[0]) * 100 : 0; // Convierte de 0-1 a 0-100
+  
+      // Ajusta el color según el rango del score
+      if (score <= 70) {
+        setBackgroundColor("bg-gradient-to-br from-red-600 to-red-400");
+      } else if (score > 70 && score <= 90) {
+        setBackgroundColor("bg-gradient-to-br from-yellow-400 to-orange-400");
+      } else {
+        setBackgroundColor("bg-gradient-to-br from-green-400 to-green-500");
+      }
+    }
+  }, [result]);  
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/score", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          Inputs: {
+            input1: [
+              {
+                age_years: parseInt(formData.age_years),
+                sex_0male_1female: parseInt(formData.sex_0male_1female),
+                episode_number: parseInt(formData.episode_number),
+              },
+            ],
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const scoredLabel = data.Results.WebServiceOutput0[0]["Scored Labels"];
+      setResult(`Scored Label: ${scoredLabel}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error desconocido.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+<div className={`min-h-screen flex items-center justify-center ${backgroundColor} transition-all duration-700`}>
+<div className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition duration-300">
+<h1 className="text-2xl font-bold text-gray-700 text-center mb-6">
+          Formulario de Predicción
+        </h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="age_years"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Edad (años)
+            </label>
+            <input
+              type="number"
+              name="age_years"
+              id="age_years"
+              value={formData.age_years}
+              onChange={handleChange}
+              className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div>
+            <label
+              htmlFor="sex_0male_1female"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Sexo
+            </label>
+            <select
+              id="sex_0male_1female"
+              name="sex_0male_1female"
+              value={formData.sex_0male_1female}
+              onChange={handleChange}
+              className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            >
+              <option value="0">Hombre</option>
+              <option value="1">Mujer</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="episode_number"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Número de Episodio
+            </label>
+            <input
+              type="number"
+              name="episode_number"
+              id="episode_number"
+              value={formData.episode_number}
+              onChange={handleChange}
+              className="block w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg focus:ring focus:ring-blue-300 focus:outline-none"
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            {loading ? "Procesando..." : "Enviar"}
+          </button>
+        </form>
+        {result && (
+          <p className="mt-4 text-center text-green-600 font-semibold">
+            {result}
+          </p>
+        )}
+        {error && (
+          <p className="mt-4 text-center text-red-600 font-semibold">{error}</p>
+        )}
+      </div>
     </div>
   );
 }
