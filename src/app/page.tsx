@@ -13,20 +13,30 @@ export default function FormPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("bg-gradient-to-br from-purple-400 to-blue-300");
+  const [message, setMessage] = useState("");
+  const [icon, setIcon] = useState("");
 
   useEffect(() => {
     if (result) {
-      // Extrae el número del resultado y asegúrate de que es un valor válido
       const match = result.match(/[\d.]+$/); // Encuentra el número al final de la cadena
-      const score = match ? parseFloat(match[0]) * 100 : 0; // Convierte de 0-1 a 0-100
+      let score = match ? parseFloat(match[0]) * 100 : 0; // Convierte de 0-1 a 0-100
   
-      // Ajusta el color según el rango del score
+      // Limita el valor máximo al 100%
+      score = Math.min(score, 100);
+  
+      // Ajusta el color del fondo
       if (score <= 70) {
         setBackgroundColor("bg-gradient-to-br from-red-600 to-red-400");
+        setMessage(`¡Ten cuidado! Cuídate mucho porque tienes un ${score.toFixed(1)}% de posibilidades de no contarla 😢`);
+        setIcon("😢");
       } else if (score > 70 && score <= 90) {
         setBackgroundColor("bg-gradient-to-br from-yellow-400 to-orange-400");
+        setMessage(`¡Cuidado moderado! Tienes un ${score.toFixed(1)}% de posibilidades de sobrevivir, pero todavía puedes mejorar 💪`);
+        setIcon("💪");
       } else {
         setBackgroundColor("bg-gradient-to-br from-green-400 to-green-500");
+        setMessage(`¡Todo bien! Tienes un ${score.toFixed(1)}% de posibilidades de que no te pase nada 😄`);
+        setIcon("😄");
       }
     }
   }, [result]);  
@@ -84,9 +94,10 @@ export default function FormPage() {
 
   return (
 <div className={`min-h-screen flex items-center justify-center ${backgroundColor} transition-all duration-700`}>
-<div className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition duration-300">
-<h1 className="text-2xl font-bold text-gray-700 text-center mb-6">
-          Formulario de Predicción
+  <div className="flex flex-row items-center space-x-12">
+    <div className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition duration-300">
+        <h1 className="text-2xl font-bold text-gray-700 text-center mb-6">
+          Formulario de Predicción de sobrevivencia a una Sepsis
         </h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -151,15 +162,15 @@ export default function FormPage() {
             {loading ? "Procesando..." : "Enviar"}
           </button>
         </form>
-        {result && (
-          <p className="mt-4 text-center text-green-600 font-semibold">
-            {result}
-          </p>
-        )}
-        {error && (
-          <p className="mt-4 text-center text-red-600 font-semibold">{error}</p>
-        )}
+        
       </div>
+      {result && (
+      <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col items-center w-96 transition-transform duration-500 transform translate-x-0">
+      <p className="text-6xl mb-4">{icon}</p>
+      <p className="text-lg font-medium text-gray-800 text-center">{message}</p>
+      </div>
+    )}
+    </div>
     </div>
   );
 }
